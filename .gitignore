@@ -1,0 +1,8 @@
+.env
+.streamlit/secrets.toml
+.backfill_state.json
+__pycache__/
+*.pyc
+.venv/
+venv/
+LINKEDIN_POST.md

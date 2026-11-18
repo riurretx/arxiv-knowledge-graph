@@ -1,0 +1,64 @@
+# Workflow de GitHub Actions: ejecuta daily_job.py todas las noches.
+#
+# OJO con la hora: el "cron" de GitHub Actions SIEMPRE va en UTC.
+#   - 03:00 CET  (horario de invierno, UTC+1) = 02:00 UTC  -> "0 2 * * *"
+#   - En horario de verano (CEST, UTC+2) esa misma línea se ejecuta a las 04:00 hora peninsular.
+# GitHub no garantiza puntualidad: en horas punta puede arrancar con unos minutos de retraso.
+
+name: Daily arXiv Knowledge Graph update
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # 03:00 CET
+  workflow_dispatch:       # botón "Run workflow" para lanzarlo a mano
+    inputs:
+      lookback_days:
+        description: "Días hacia atrás a revisar"
+        required: false
+        default: "3"
+
+# Evita que dos ejecuciones escriban a la vez en Neo4j.
+concurrency:
+  group: daily-kg-job
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  update-graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar el job diario
+        env:
+          # Todos estos valores se definen en:
+          # Settings -> Secrets and variables -> Actions -> "Repository secrets"
+          NEO4J_URI: ${{ secrets.NEO4J_URI }}
+          NEO4J_USERNAME: ${{ secrets.NEO4J_USERNAME }}
+          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+          NEO4J_DATABASE: ${{ secrets.NEO4J_DATABASE }}
+          JEV_API_KEY: ${{ secrets.JEV_API_KEY }}
+          JEV_API_URL: ${{ secrets.JEV_API_URL }}
+          JEV_MODEL: ${{ secrets.JEV_MODEL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
+          # Ajustes no secretos: Settings -> Secrets and variables -> Actions -> "Variables"
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_REASONING_EFFORT: ${{ vars.LLM_REASONING_EFFORT }}
+          JEV_THRESHOLD: ${{ vars.JEV_THRESHOLD }}
+          LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || vars.LOOKBACK_DAYS }}
+        run: python daily_job.py

@@ -1,0 +1,17 @@
+# Dependencias exactas (probadas con Python 3.12).
+# Las usan tanto los scripts de carga (backfill.py / daily_job.py) como la app (app.py).
+
+# --- Pipeline de extracción y carga ---
+openai==3.55.1           # SDK oficial de OpenAI (GPT)
+arxiv==4.1.0             # cliente de la API de arXiv (gestiona paginación y pausas)
+requests==2.34.2         # llamadas HTTP a JEV y Semantic Scholar
+tenacity==9.2.1          # reintentos con espera exponencial
+python-dotenv==1.2.4     # lee el fichero .env en local
+
+# --- Base de datos ---
+neo4j==6.4.1             # driver oficial de Neo4j (AuraDB)
+
+# --- Frontend ---
+streamlit==1.67.0
+pyvis==0.3.2             # dibujo interactivo del grafo
+pandas==3.1.1
